@@ -19,7 +19,7 @@ class Image extends Base
      * @param array $options
      * @return void
      */
-    public function generation(array $data, array $options)
+    public function generations(array $data, array $options)
     {
         $headers = $this->getHeaders($options);
         $options = $this->formatOptions($options);
