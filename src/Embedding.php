@@ -22,8 +22,6 @@ class Embedding extends Base
     public function create(array $data, array $options)
     {
         $headers = $this->getHeaders($options);
-        $model = $data['model'] ?? '';
-        $http = new Client();
         $options = $this->formatOptions($options);
         $requestOptions = [
             'method' => 'POST',
@@ -43,7 +41,9 @@ class Embedding extends Base
                 ], new Response(0));
             }
         ];
+        $model = $data['model'] ?? '';
         $path = $this->isAzure ? "/openai/deployments/$model/embeddings?api-version=$this->azureApiVersion" : "/v1/embeddings";
+        $http = new Client();
         $http->request($this->api . $path, $requestOptions);
     }
 

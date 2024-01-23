@@ -17,7 +17,6 @@ class Audio extends Base
     public function speech(array $data, array $options)
     {
         $headers = $this->getHeaders($options);
-        $http = new Client();
         $stream = isset($options['stream']);
         $requestOptions = [
             'method' => 'POST',
@@ -43,6 +42,7 @@ class Audio extends Base
         if (!$stream) {
             unset($requestOptions['progress']);
         }
+        $http = new Client();
         $http->request("$this->api/v1/audio/speech", $requestOptions);
     }
 

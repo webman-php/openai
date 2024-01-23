@@ -23,8 +23,6 @@ class Chat extends Base
     public function completions(array $data, array $options)
     {
         $headers = $this->getHeaders($options);
-        $model = $data['model'] ?? '';
-        $http = new Client();
         if (isset($options['stream'])) {
             $data['stream'] = true;
         }
@@ -65,7 +63,9 @@ class Chat extends Base
         if (!$stream) {
             unset($requestOptions['progress']);
         }
+        $model = $data['model'] ?? '';
         $path = $this->isAzure ? "/openai/deployments/$model/chat/completions?api-version=$this->azureApiVersion" : "/v1/chat/completions";
+        $http = new Client();
         $http->request($this->api . $path, $requestOptions);
     }
 

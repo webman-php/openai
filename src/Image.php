@@ -23,7 +23,6 @@ class Image extends Base
     {
         $headers = $this->getHeaders($options);
         $options = $this->formatOptions($options);
-        $http = new Client();
         $requestOptions = [
             'method' => 'POST',
             'data' => json_encode($data),
@@ -44,6 +43,7 @@ class Image extends Base
         ];
         $model = $data['model'] ?? '';
         $path = $this->isAzure ? "/openai/deployments/$model/images/generations?api-version=$this->azureApiVersion" : "/v1/images/generations";
+        $http = new Client();
         $http->request($this->api . $path, $requestOptions);
     }
 
