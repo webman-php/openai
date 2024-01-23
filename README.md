@@ -1,5 +1,5 @@
 # openai
-OpenAI client for webman/workerman
+OpenAI client for webman and workerman
 
 # Documentation
 
