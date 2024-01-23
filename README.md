@@ -1,5 +1,5 @@
 # openai
-OpenAI client for workerman and webman
+OpenAI PHP asynchronous client for workerman and webman.
 
 # Documentation
 
