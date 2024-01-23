@@ -3,8 +3,6 @@
 namespace Webman\Openai;
 
 use Throwable;
-use Workerman\Http\Client as HttpClient;
-use Workerman\Http\Response;
 
 class Base
 {
