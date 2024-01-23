@@ -121,11 +121,10 @@ class AudioController
 {
     public function speech(Request $request)
     {
-        $model = $request->input('model', 'tts-1');
         $connection = $request->connection;
         $audio = new Audio(['apikey' => 'sk-xxx', 'api' => 'https://api.openai.com']);
         $audio->speech([
-            'model' => $model,
+            'model' => 'tts-1',
             'input' => '你好，有什么可以帮您？',
             'voice' => 'echo'
         ], [
