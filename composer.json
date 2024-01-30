@@ -5,8 +5,8 @@
   "description": "OpenAI client for webman or workerman",
   "require": {
     "php": ">=7.2.0",
-    "walkor/workerman": "^v4.1.11",
-    "walkor/http-client": "v2.1.1"
+    "workerman/workerman": "^v4.1.11",
+    "workerman/http-client": "v2.1.1"
   },
   "autoload": {
     "psr-4": {
