@@ -65,7 +65,7 @@ class Chat extends Base
         }
         $model = $data['model'] ?? '';
         $path = $this->isAzure ? "/openai/deployments/$model/chat/completions?api-version=$this->azureApiVersion" : "/v1/chat/completions";
-        $http = new Client();
+        $http = new Client(['timeout' => 300]);
         $http->request($this->api . $path, $requestOptions);
     }
 
