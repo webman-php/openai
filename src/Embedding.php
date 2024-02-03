@@ -43,7 +43,7 @@ class Embedding extends Base
         ];
         $model = $data['model'] ?? '';
         $path = $this->isAzure ? "/openai/deployments/$model/embeddings?api-version=$this->azureApiVersion" : "/v1/embeddings";
-        $http = new Client();
+        $http = new Client(['timeout' => 60]);
         $http->request($this->api . $path, $requestOptions);
     }
 
