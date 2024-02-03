@@ -42,7 +42,7 @@ class Audio extends Base
         if (!$stream) {
             unset($requestOptions['progress']);
         }
-        $http = new Client();
+        $http = new Client(['timeout' => 300]);
         $http->request("$this->api/v1/audio/speech", $requestOptions);
     }
 
