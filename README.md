@@ -1,9 +1,12 @@
 # openai
 OpenAI PHP asynchronous client for [workerman](https://github.com/walkor/workerman) and [webman](https://github.com/walkor/webman).
 
-# Documentation
+# Install
+```
+composer require webman/openai
+```
 
-## Chat with stream
+### Chat with stream
 ```php
 <?php
 namespace app\controller;
@@ -41,7 +44,7 @@ class ChatController
 }
 ```
 
-## Chat without stream
+### Chat without stream
 ```php
 <?php
 namespace app\controller;
@@ -73,7 +76,7 @@ class ChatController
 }
 ```
 
-## Image generations
+### Image generations
 ```php
 <?php
 namespace app\controller;
@@ -108,7 +111,7 @@ class ImageController
 }
 ```
 
-## Audio speech
+### Audio speech
 ```php
 <?php
 namespace app\controller;
@@ -143,7 +146,7 @@ class AudioController
 }
 ```
 
-## Embeddings
+### Embeddings
 ```php
 <?php
 namespace app\controller;
@@ -176,7 +179,7 @@ class EmbeddingController
 }
 ```
 
-## Azure openai
+### Azure openai
 ```php
 public function completions(Request $request)
 {
