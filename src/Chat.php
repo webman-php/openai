@@ -26,6 +26,7 @@ class Chat extends Base
         if (isset($options['stream'])) {
             $data['stream'] = true;
         }
+        var_export($data);
         $stream = !empty($data['stream']) && isset($options['stream']);
         $options = $this->formatOptions($options);
         $requestOptions = [
@@ -76,6 +77,15 @@ class Chat extends Base
      */
     public static function formatResponse($buffer)
     {
+        if (!$buffer || $buffer[0] === '') {
+            return [
+                'error' => [
+                    'code' => 'parse_error',
+                    'error' => 'Unable to parse response',
+                    'detail' => $buffer
+                ]
+            ];
+        }
         $json = json_decode($buffer, true);
         if ($json) {
             return $json;
@@ -84,6 +94,9 @@ class Chat extends Base
         $content = '';
         $finishReason = null;
         $model = '';
+        $promptFilterResults = null;
+        $contentFilterResults = null;
+        $contentFilterOffsets = null;
         foreach ($chunks as $chunk) {
             if ($chunk === "") {
                 continue;
@@ -94,6 +107,12 @@ class Chat extends Base
             }
             try {
                 $data = json_decode($chunk, true);
+                if (isset($data['model'])) {
+                    $model = $data['model'];
+                }
+                if (isset($data['prompt_filter_results'])) {
+                    $promptFilterResults = $data['prompt_filter_results'];
+                }
                 if (isset($data['error'])) {
                     $content .= $data['error']['message'] ?? "";
                 } else {
@@ -102,25 +121,19 @@ class Chat extends Base
                         if (isset($item['finish_reason'])) {
                             $finishReason = $item['finish_reason'];
                         }
+                        if (isset($item['content_filter_results'])) {
+                            $contentFilterResults = $item['content_filter_results'];
+                        }
+                        if (isset($item['content_filter_offsets'])) {
+                            $contentFilterOffsets = $item['content_filter_offsets'];
+                        }
                     }
-                }
-                if (isset($data['model'])) {
-                    $model = $data['model'];
                 }
             } catch (Throwable $e) {
                 echo $e;
             }
         }
-        if ($content === '') {
-            return [
-                'error' => [
-                    'code' => 'parse_error',
-                    'error' => 'Unable to parse response',
-                    'detail' => $buffer
-                ]
-            ];
-        }
-        return [
+        $result = [
             'choices' => [
                 [
                     'finish_reason' => $finishReason,
@@ -133,6 +146,16 @@ class Chat extends Base
             ],
             'model' => $model,
         ];
+        if ($promptFilterResults) {
+            $result['prompt_filter_results'] = $promptFilterResults;
+        }
+        if ($contentFilterResults) {
+            $result['choices'][0]['content_filter_results'] = $contentFilterResults;
+        }
+        if ($contentFilterOffsets) {
+            $result['choices'][0]['content_filter_offsets'] = $contentFilterOffsets;
+        }
+        return $result;
     }
 
 }
