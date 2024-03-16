@@ -26,7 +26,6 @@ class Chat extends Base
         if (isset($options['stream'])) {
             $data['stream'] = true;
         }
-        var_export($data);
         $stream = !empty($data['stream']) && isset($options['stream']);
         $options = $this->formatOptions($options);
         $requestOptions = [
