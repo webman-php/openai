@@ -80,7 +80,7 @@ class Chat extends Base
             return [
                 'error' => [
                     'code' => 'parse_error',
-                    'error' => 'Unable to parse response',
+                    'message' => 'Unable to parse response',
                     'detail' => $buffer
                 ]
             ];
