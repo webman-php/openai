@@ -3,6 +3,8 @@ OpenAI PHP asynchronous client for [workerman](https://github.com/walkor/workerm
 
 # Install
 ```
+composer create-project workerman/webman
+cd webman
 composer require webman/openai
 ```
 
