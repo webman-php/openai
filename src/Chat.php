@@ -35,7 +35,7 @@ class Chat extends Base
             'progress' => function ($buffer) use ($options) {
                 static $tmp = '';
                 $tmp .= $buffer;
-                if ($tmp[strlen($tmp) - 1] !== "\n") {
+                if ($tmp === '' || $tmp[strlen($tmp) - 1] !== "\n") {
                     return null;
                 }
                 preg_match_all('/data: (\{.+?\})\n/', $tmp, $matches);
