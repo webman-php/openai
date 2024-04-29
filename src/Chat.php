@@ -96,6 +96,7 @@ class Chat extends Base
         $promptFilterResults = null;
         $contentFilterResults = null;
         $contentFilterOffsets = null;
+        $toolCalls = [];
         foreach ($chunks as $chunk) {
             if ($chunk === "") {
                 continue;
@@ -117,6 +118,13 @@ class Chat extends Base
                 } else {
                     foreach ($data['choices'] ?? [] as $item) {
                         $content .= $item['delta']['content'] ?? "";
+                        foreach ($item['delta']['tool_calls'] ?? [] as $function) {
+                            if (isset($function['function']['name'])) {
+                                $toolCalls[$function['index']] = $function;
+                            } elseif (isset($function['function']['arguments'])) {
+                                $toolCalls[$function['index']]['function']['arguments'] .= $function['function']['arguments'];
+                            }
+                        }
                         if (isset($item['finish_reason'])) {
                             $finishReason = $item['finish_reason'];
                         }
@@ -153,6 +161,9 @@ class Chat extends Base
         }
         if ($contentFilterOffsets) {
             $result['choices'][0]['content_filter_offsets'] = $contentFilterOffsets;
+        }
+        if ($toolCalls) {
+            $result['choices'][0]['message']['tool_calls'] = array_values($toolCalls);
         }
         return $result;
     }
