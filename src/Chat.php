@@ -101,7 +101,11 @@ class Chat extends Base
             if ($chunk === "") {
                 continue;
             }
-            $chunk = trim(substr($chunk, 6));
+            if (preg_match('/qwen-/', $chunk)) {
+                $chunk = trim(substr($chunk, 5));
+            } else {
+                $chunk = trim(substr($chunk, 6));
+            }
             if ($chunk === "" || $chunk === "[DONE]") {
                 continue;
             }
