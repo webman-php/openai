@@ -38,6 +38,9 @@ class Chat extends Base
                 if ($tmp === '' || $tmp[strlen($tmp) - 1] !== "\n") {
                     return null;
                 }
+                if (preg_match('/qwen-/', $tmp)) {
+                    str_replace('data:','data: ', $tmp);
+                }
                 preg_match_all('/data: (\{.+?\})\n/', $tmp, $matches);
                 $tmp = '';
                 foreach ($matches[1]?:[] as $match) {
