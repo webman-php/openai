@@ -208,3 +208,32 @@ public function completions(Request $request)
     ]);
 }
 ```
+### Qwen openai
+
+```php
+public function completions(Request $request)
+{
+    $connection = $request->connection;
+    $chat = new Chat(['api' => 'https://dashscope.aliyuncs.com/compatible-mode', 'apikey' => 'xxx']);
+    $chat->completions(
+        [
+            'model' => 'qwen-turbo',
+            'stream' => true,
+            'messages' => [['role' => 'user', 'content' => 'hello']],
+        ], [
+        'stream' => function($data) use ($connection) {
+            $connection->send(new Chunk(json_encode($data, JSON_UNESCAPED_UNICODE) . "\n"));
+        },
+        'complete' => function($result, $response) use ($connection) {
+            if (isset($result['error'])) {
+                $connection->send(new Chunk(json_encode($result, JSON_UNESCAPED_UNICODE) . "\n"));
+            }
+            $connection->send(new Chunk(''));
+        },
+    ]);
+    return response()->withHeaders([
+        "Transfer-Encoding" => "chunked",
+    ]);
+}
+```
+> Help：https://help.aliyun.com/zh/dashscope/developer-reference/compatibility-of-openai-with-dashscope
