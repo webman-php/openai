@@ -38,10 +38,7 @@ class Chat extends Base
                 if ($tmp === '' || $tmp[strlen($tmp) - 1] !== "\n") {
                     return null;
                 }
-                if (preg_match('/qwen-/', $tmp)) {
-                    str_replace('data:','data: ', $tmp);
-                }
-                preg_match_all('/data: (\{.+?\})\n/', $tmp, $matches);
+                preg_match_all('/data: *?(\{.+?\})[ \r]*?\n/', $tmp, $matches);
                 $tmp = '';
                 foreach ($matches[1]?:[] as $match) {
                     if ($json = json_decode($match, true)) {
@@ -101,13 +98,14 @@ class Chat extends Base
         $contentFilterOffsets = null;
         $toolCalls = [];
         foreach ($chunks as $chunk) {
+            $chunk = trim($chunk);
             if ($chunk === "") {
                 continue;
             }
-            if (preg_match('/qwen-/', $chunk)) {
-                $chunk = trim(substr($chunk, 5));
+            if (strpos($chunk, 'data:{') === 0) {
+                $chunk = substr($chunk, 5);
             } else {
-                $chunk = trim(substr($chunk, 6));
+                $chunk = substr($chunk, 6);
             }
             if ($chunk === "" || $chunk === "[DONE]") {
                 continue;
