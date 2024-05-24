@@ -30,7 +30,7 @@ class Chat extends Base
         $options = $this->formatOptions($options);
         $requestOptions = [
             'method' => 'POST',
-            'data' => json_encode($data),
+            'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
             'headers' => $headers,
             'progress' => function ($buffer) use ($options) {
                 static $tmp = '';
