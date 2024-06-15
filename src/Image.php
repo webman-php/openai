@@ -42,9 +42,12 @@ class Image extends Base
             }
         ];
         $model = $data['model'] ?? '';
-        $path = $this->isAzure ? "/openai/deployments/$model/images/generations?api-version=$this->azureApiVersion" : "/v1/images/generations";
-        $http = new Client(['timeout' => 300]);
-        $http->request($this->api . $path, $requestOptions);
+        $url = $this->api;
+        if (!parse_url($this->api, PHP_URL_PATH)) {
+            $url = $this->api . ($this->isAzure ? "/openai/deployments/$model/images/generations?api-version=$this->azureApiVersion" : "/v1/images/generations");
+        }
+        $http = new Client(['timeout' => 600]);
+        $http->request($url, $requestOptions);
     }
 
     /**
