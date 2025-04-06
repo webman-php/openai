@@ -5,8 +5,8 @@
   "description": "OpenAI client for webman or workerman",
   "require": {
     "php": ">=7.2.0",
-    "workerman/workerman": ">=v4.1.11",
-    "workerman/http-client": "^v2.1.1"
+    "workerman/workerman": "^4.1.11 | ^5.1",
+    "workerman/http-client": "^2.1.1 | ^3.0"
   },
   "autoload": {
     "psr-4": {
