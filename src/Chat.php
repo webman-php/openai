@@ -94,6 +94,15 @@ class Chat extends Base
         if ($json) {
             return $json;
         }
+        if ($buffer[0] === '<') {
+            return [
+                'error' => [
+                    'code' => 'parse_error',
+                    'message' => 'Invalid response from api',
+                    'detail' => $buffer
+                ]
+            ];
+        }
         $chunks = explode("\n", $buffer);
         $content = '';
         $finishReason = null;
