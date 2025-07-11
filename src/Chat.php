@@ -70,7 +70,7 @@ class Chat extends Base
         } else if ($path[strlen($path) - 1] === '/') {
             $url = $this->api . 'chat/completions';
         }
-        $http = new Client(['timeout' => 600]);
+        $http = new Client(['timeout' => $options['timeout'] ?? 600]);
         $http->request($url, $requestOptions);
     }
 
