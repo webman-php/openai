@@ -29,6 +29,7 @@ class ChatController
                 'stream' => true,
                 'messages' => [['role' => 'user', 'content' => 'hello']],
             ], [
+            'timeout' => 600, //可选参数,默认600s
             'stream' => function($data) use ($connection) {
                 $connection->send(new Chunk(json_encode($data, JSON_UNESCAPED_UNICODE) . "\n"));
             },
