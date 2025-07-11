@@ -48,7 +48,7 @@ class Audio extends Base
         } else if ($path[strlen($path) - 1] === '/') {
             $url = $this->api . 'audio/speech';
         }
-        $http = new Client(['timeout' => 600]);
+        $http = new Client(['timeout' => 3600]);
         $http->request($url, $requestOptions);
     }
 
