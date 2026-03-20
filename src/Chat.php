@@ -40,7 +40,7 @@ class Chat extends Base
                 }
                 preg_match_all('/data: *?(\{.+?\})[ \r]*?\n/', $tmp, $matches);
                 $tmp = '';
-                foreach ($matches[1]?:[] as $match) {
+                foreach ($matches[1] ?: [] as $match) {
                     if ($json = json_decode($match, true)) {
                         $options['stream']($json);
                     }
@@ -55,7 +55,7 @@ class Chat extends Base
                     'error' => [
                         'code' => 'exception',
                         'message' => $exception->getMessage(),
-                        'detail' => (string) $exception
+                        'detail' => (string)$exception
                     ],
                 ], new Response(0));
             }
@@ -105,12 +105,18 @@ class Chat extends Base
         }
         $chunks = explode("\n", $buffer);
         $content = '';
+        $reasoning_content = '';//思考内容
         $finishReason = null;
         $model = '';
         $promptFilterResults = null;
         $contentFilterResults = null;
         $contentFilterOffsets = null;
         $toolCalls = [];
+        $usage = [
+            'prompt_tokens' => 0,
+            'completion_tokens' => 0,
+            'total_tokens' => 0
+        ];//使用量统计
         foreach ($chunks as $chunk) {
             $chunk = trim($chunk);
             if ($chunk === "") {
@@ -137,10 +143,11 @@ class Chat extends Base
                 } else {
                     foreach ($data['choices'] ?? [] as $item) {
                         $content .= $item['delta']['content'] ?? "";
+                        $reasoning_content .= $item['delta']['reasoning_content'] ?? "";
                         foreach ($item['delta']['tool_calls'] ?? [] as $function) {
-                            if (isset($function['function']['name'])) {
+                            if (isset($function['function']['name']) && $function['function']['name'] !== '') {
                                 $toolCalls[$function['index']] = $function;
-                            } elseif (isset($function['function']['arguments'])) {
+                            } elseif (isset($function['function']['arguments']) && $function['function']['arguments'] !== '') {
                                 $toolCalls[$function['index']]['function']['arguments'] .= $function['function']['arguments'];
                             }
                         }
@@ -153,6 +160,10 @@ class Chat extends Base
                         if (isset($item['content_filter_offsets'])) {
                             $contentFilterOffsets = $item['content_filter_offsets'];
                         }
+                    }
+                    //统计数据
+                    if (isset($data['usage'])) {
+                        $usage = $data['usage'];
                     }
                 }
             } catch (Throwable $e) {
@@ -167,10 +178,12 @@ class Chat extends Base
                     'message' => [
                         'role' => 'assistant',
                         'content' => $content,
+                        'reasoning_content' => $reasoning_content,
                     ],
                 ]
             ],
             'model' => $model,
+            'usage' => $usage
         ];
         if ($promptFilterResults) {
             $result['prompt_filter_results'] = $promptFilterResults;
