@@ -1,0 +1,8 @@
+build
+vendor
+.idea
+.vscode
+.phpunit*
+composer.lock
+phpunit.xml
+tests/workerman.log

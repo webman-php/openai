@@ -4,13 +4,26 @@
   "license": "MIT",
   "description": "OpenAI client for webman or workerman",
   "require": {
-    "php": ">=7.2.0",
-    "workerman/workerman": "^4.1.11 | ^5.1",
-    "workerman/http-client": "^2.1.1 | ^3.0"
+    "php": ">=8.1.0",
+    "workerman/workerman": "^5.1",
+    "workerman/http-client": "^3.1",
+    "revolt/event-loop": "^1.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5"
   },
   "autoload": {
     "psr-4": {
       "Webman\\Openai\\": "src"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Webman\\Openai\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/start.php",
+    "test:live": "php tests/start.php --group live"
   }
 }

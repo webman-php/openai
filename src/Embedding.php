@@ -2,7 +2,6 @@
 
 namespace Webman\Openai;
 
-use Workerman\Http\Client;
 use Workerman\Http\Response;
 
 class Embedding extends Base
@@ -11,45 +10,63 @@ class Embedding extends Base
     /**
      * @var string $azureApiVersion
      */
-    protected $azureApiVersion = '2023-05-15';
+    protected $azureApiVersion = '2024-10-21';
 
     /**
-     * Embedding api
+     * Create embeddings.
+     *
+     * Behaviour:
+     *  - Async callback mode (returns void): set $options['complete'] to receive the result.
+     *      complete: callable(?array $result, ?OpenAIException $exception, ?Response $response): void
+     *                Older 1- or 2-parameter callbacks remain compatible (PHP drops extras).
+     *  - Coroutine sync mode (must run inside a coroutine): returns the decoded result array,
+     *    or [$result, ?Response] when $options['with_response'] === true.
+     *    HTTP/API errors raise an OpenAIException.
+     *
      * @param array $data
-     * @param array $options
-     * @return void
+     * @param array{
+     *     timeout?: int,
+     *     headers?: array<string,string>,
+     *     with_response?: bool,
+     *     complete?: callable(?array, ?OpenAIException, ?Response): void,
+     * } $options
+     * @return array|void
      */
-    public function create(array $data, array $options)
+    public function create(array $data, array $options = [])
     {
         $headers = $this->getHeaders($options);
-        $options = $this->formatOptions($options);
-        $requestOptions = [
-            'method' => 'POST',
-            'data' => json_encode($data),
-            'headers' => $headers,
-            'success' => function (Response $response) use ($options) {
-                $result = static::formatResponse((string)$response->getBody());
-                $options['complete']($result, $response);
-            },
-            'error' => function ($exception) use ($options) {
-                $options['complete']([
-                    'error' => [
-                        'code' => 'exception',
-                        'message' => $exception->getMessage(),
-                        'detail' => (string) $exception
-                    ],
-                ], new Response(0));
+        $ret = $this->syncOrFormatAndSend($options, function (array $opt) use ($data, $headers): void {
+            $requestOptions = [
+                'method' => 'POST',
+                'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
+                'headers' => $headers,
+                'success' => function (Response $response) use ($opt) {
+                    $result = static::formatResponse((string)$response->getBody());
+                    $opt['complete']($result, $response);
+                },
+                'error' => function ($exception) use ($opt) {
+                    $opt['complete']([
+                        'error' => [
+                            'code' => 'exception',
+                            'message' => $exception->getMessage(),
+                            'detail' => (string) $exception
+                        ],
+                    ], new Response(0));
+                }
+            ];
+            $model = $data['model'] ?? '';
+            $url = $this->api;
+            if (!$path = parse_url($this->api, PHP_URL_PATH)) {
+                $url = $this->api . ($this->isAzure ? "/openai/deployments/$model/embeddings?api-version=$this->azureApiVersion" : "/v1/embeddings");
+            } else if ($path[strlen($path) - 1] === '/') {
+                $url = $this->api . 'embeddings';
             }
-        ];
-        $model = $data['model'] ?? '';
-        $url = $this->api;
-        if (!$path = parse_url($this->api, PHP_URL_PATH)) {
-            $url = $this->api . ($this->isAzure ? "/openai/deployments/$model/embeddings?api-version=$this->azureApiVersion" : "/v1/embeddings");
-        } else if ($path[strlen($path) - 1] === '/') {
-            $url = $this->api . 'v1/embeddings';
+            $http = $this->createHttpClient((int) ($opt['timeout'] ?? 60));
+            $http->request($url, $requestOptions);
+        });
+        if ($ret !== null) {
+            return $ret;
         }
-        $http = new Client(['timeout' => 60]);
-        $http->request($url, $requestOptions);
     }
 
     /**
@@ -60,7 +77,7 @@ class Embedding extends Base
     public static function formatResponse($buffer)
     {
         $json = json_decode($buffer, true);
-        if ($json && (!empty($json['error']) || isset($json['data'][0]['embedding']))) {
+        if (is_array($json)) {
             return $json;
         }
         return [

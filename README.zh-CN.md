@@ -1,26 +1,27 @@
 # webman/openai
 
-**English** | [简体中文](README.zh-CN.md)
+[English](README.md) | **简体中文**
 
-Non-blocking OpenAI client for PHP with coroutine support and a built-in connection pool, designed for [Workerman](https://github.com/walkor/workerman) / [webman](https://github.com/walkor/webman).
+PHP 非阻塞 OpenAI 客户端，支持协程，内置连接池，适用于 [Workerman](https://github.com/walkor/workerman) / [webman](https://github.com/walkor/webman)。
 
-## Installation
+## 安装
 
 ```bash
 composer require webman/openai
 ```
 
-Requires **PHP 8.1+** and a **Workerman 5.1+** runtime.
+需要 **PHP 8.1+**、**Workerman 5.1+运行环境**。
 
-> **Enable coroutines in webman**  
-> Set `webman.eventLoop` in `config/process.php` to `Workerman\Events\Fiber::class`.  
-> If the `swoole` or `swow` extension is installed, you may use `Workerman\Events\Swoole::class` or `Workerman\Events\Swow::class` instead.
+> **webman开启协程**  
+> 开启协程需要设置 `config/process.php` 中 `webman.eventLoop` 为 `Workerman\Events\Fiber::class`。  
+> 若已安装 `swoole` 或 `swow` 扩展，也可设为 `Workerman\Events\Swoole::class` 或 `Workerman\Events\Swow::class`。
 
 ---
 
-## Quick overview (Workerman)
 
-### Non-streaming
+## 快速预览(Workerman环境) 
+
+### 非流式
 
 ```php
 <?php
@@ -57,7 +58,7 @@ $worker->onMessage = function (TcpConnection $connection, Request $request) {
 Worker::runAll();
 ```
 
-### Streaming
+### 流式 
 
 ```php
 <?php
@@ -104,12 +105,12 @@ Worker::runAll();
 
 ---
 
-## Chat: completions (Webman)
+## Chat：对话补全 (Webman环境)
 
-> **Note**  
-> API usage is the same whether you run under Workerman or webman; the examples below use webman.
+> **提示**  
+> 不管是在workerman还是webman运行环境，接口使用方法是一样的，以下以webman为例。
 
-### Coroutines · non-streaming
+### 协程 · 非流式
 
 ```php
 <?php
@@ -137,9 +138,9 @@ class ChatController
 }
 ```
 
-### Coroutines · streaming
+### 协程 · 流式
 
-Under coroutines, streaming returns a **generator**: send response headers to the client first, then emit each piece with `Chunk`, and finish with `close`.
+流式在协程下返回 **生成器**：必须先向客户端写出响应头，再逐块 `Chunk`，最后 `close` 结束。
 
 ```php
 <?php
@@ -175,12 +176,12 @@ class ChatController
             $connection->send(new Chunk(json_encode($chunk, JSON_UNESCAPED_UNICODE) . "\n"));
         }
         $connection->close(new Chunk(''));
-        // Stream finished manually; no return needed
+        // 流式已手动发完，无需 return
     }
 }
 ```
 
-### Async callbacks · streaming
+### 异步回调 · 流式
 
 ```php
 <?php
@@ -227,7 +228,7 @@ class ChatController
 }
 ```
 
-### Async callbacks · non-streaming
+### 异步回调 · 非流式
 
 ```php
 <?php
@@ -271,7 +272,7 @@ class ChatController
 }
 ```
 
-### Tool / function calling (`tools`)
+### Tool / Function calling（`tools`）
 
 ```php
 <?php
@@ -289,7 +290,7 @@ class ChatController
             $city = $args['city'] ?? '';
             return json_encode([
                 'city' => $city,
-                'summary' => 'Clear',
+                'summary' => '晴',
                 'temp_c' => 22,
             ], JSON_UNESCAPED_UNICODE);
         }
@@ -308,7 +309,7 @@ class ChatController
                 'type' => 'function',
                 'function' => [
                     'name' => 'get_weather',
-                    'description' => 'Get the current weather for a given city',
+                    'description' => '查询指定城市的当前天气',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -321,7 +322,7 @@ class ChatController
         ];
 
         $messages = [
-            ['role' => 'user', 'content' => 'What is the weather in Hangzhou? Use the tool first, then answer.'],
+            ['role' => 'user', 'content' => '杭州天气怎样？先查工具再回答。'],
         ];
 
         $first = $chat->completions([
@@ -366,9 +367,10 @@ class ChatController
 
 ---
 
-## Image: generations (Webman)
+## Image：图像生成 (Webman环境)
 
-### Coroutines
+
+### 协程
 
 ```php
 <?php
@@ -398,7 +400,7 @@ class ImageController
 }
 ```
 
-### Async callbacks
+### 异步回调 (Webman环境)
 
 ```php
 <?php
@@ -446,9 +448,9 @@ class ImageController
 
 ---
 
-## Embedding: vectors (Webman)
+## Embedding：向量 (Webman环境)
 
-### Coroutines
+### 协程
 
 ```php
 <?php
@@ -477,7 +479,7 @@ class EmbeddingController
 }
 ```
 
-### Async callbacks
+### 异步回调
 
 ```php
 <?php
@@ -524,9 +526,9 @@ class EmbeddingController
 
 ---
 
-## Audio: text-to-speech (TTS) (Webman)
+## Audio：语音合成（TTS）(Webman环境)
 
-### Coroutines
+### 协程
 
 ```php
 <?php
@@ -547,7 +549,7 @@ class AudioController
 
         $binary = $audio->speech([
             'model' => 'gpt-4o-mini-tts',
-            'input' => 'Hello, how can I help you?',
+            'input' => '你好，有什么可以帮您？',
             'voice' => 'alloy',
         ]);
         return response($binary)->withHeaders([
@@ -557,7 +559,7 @@ class AudioController
 }
 ```
 
-### Coroutines · streaming
+### 协程 · 流式
 
 ```php
 <?php
@@ -580,7 +582,7 @@ class AudioController
 
         $chunks = $audio->speech([
             'model' => 'gpt-4o-mini-tts',
-            'input' => 'Hello, how can I help you?',
+            'input' => '你好，有什么可以帮您？',
             'voice' => 'alloy',
             'stream' => true,
         ]);
@@ -598,7 +600,7 @@ class AudioController
 }
 ```
 
-### Async callbacks · streaming
+### 异步回调 · 流式
 
 ```php
 <?php
@@ -624,7 +626,7 @@ class AudioController
         $audio->speech(
             [
                 'model' => 'gpt-4o-mini-tts',
-                'input' => 'Hello, how can I help you?',
+                'input' => '你好，有什么可以帮您？',
                 'voice' => 'alloy',
             ],
             [
@@ -647,16 +649,16 @@ class AudioController
 
 ---
 
-## Gateway compatibility: Azure OpenAI
+## 兼容网关：Azure OpenAI
 
-### Coroutines · Chat streaming
+### 协程 · Chat 流式
 
 ```php
 $chat = new Chat([
     'api' => 'https://YOUR_RESOURCE.openai.azure.com',
     'apikey' => getenv('AZURE_OPENAI_KEY') ?: 'xxx',
     'isAzure' => true,
-    // optional: 'azureApiVersion' => '2023-05-15',
+    // 可选：'azureApiVersion' => '2023-05-15',
 ]);
 
 $chunks = $chat->completions([
@@ -666,7 +668,7 @@ $chunks = $chat->completions([
 ]);
 ```
 
-### Async callbacks · Chat streaming
+### 异步回调 · Chat 流式
 
 ```php
 $chat = new Chat([
@@ -678,13 +680,13 @@ $chat = new Chat([
 
 ---
 
-## Gateway compatibility: Alibaba Cloud DashScope (OpenAI-compatible mode)
+## 兼容网关：阿里云 DashScope（OpenAI 兼容模式）
 
-Documentation: <https://help.aliyun.com/zh/dashscope/developer-reference/compatibility-of-openai-with-dashscope>
+文档：<https://help.aliyun.com/zh/dashscope/developer-reference/compatibility-of-openai-with-dashscope>
 
-### Coroutines · Chat streaming
+### 协程 · Chat 流式
 
-When `Chat` is configured with an `api` URL **that includes a path**, if the path ends with a **trailing slash (`/`)**, `chat/completions` is appended automatically (same pattern as the OpenAI-compatible path). For DashScope compatibility mode, use a base URL ending with **`/v1/`**:
+`Chat` 在 `api` **带有路径**时，若路径以 **`/` 结尾**，会自动拼接 `chat/completions`（与 OpenAI 兼容路径一致）。DashScope 兼容模式请使用以 **`/v1/`** 结尾的 base：
 
 ```php
 $chat = new Chat([
@@ -699,7 +701,7 @@ $chunks = $chat->completions([
 ]);
 ```
 
-### Async callbacks · Chat streaming
+### 异步回调 · Chat 流式
 
 ```php
 $chat = new Chat([
@@ -710,19 +712,18 @@ $chat = new Chat([
 
 ---
 
-## Optional parameters
+## 可选参数
 
-The second argument `$options` on each API method may include:
+各接口第二个参数 `$options` 中可传：
 
-- **`timeout`**: timeout in seconds (defaults differ slightly per API; see the Client constructor in the source).
-- **`headers`**: extra HTTP headers (merged with the defaults).
+- **`timeout`**：超时秒数（各接口默认值不完全相同，见源码中的 Client 构造）。
+- **`headers`**：额外 HTTP 头（会与默认头合并）。
 
 ---
 
-## Response headers: `with_response`
+## 获取响应头：`with_response`
 
-### Non-streaming
-
+### 非流式
 ```php
 [$result, $response] = $chat->completions([
     'model' => 'gpt-4o-mini',
@@ -732,10 +733,10 @@ The second argument `$options` on each API method may include:
 echo $response->getHeaderLine('x-request-id');
 ```
 
-> **Note**  
-> Other endpoints also support `with_response` to obtain the `Response` object; usage is the same.
+> **提示**
+> 其它接口也支持`with_response`获取`response`，获取方式相同
 
-### Streaming
+### 流式
 
 ```php
 [$chunks, $response] = $chat->completions([
@@ -753,13 +754,14 @@ foreach ($chunks as $chunk) {
 
 ---
 
-## Exceptions and errors
+## 异常与错误
 
-Error handling is unified across coroutine and async styles via the same **`Webman\Openai\OpenAIException`** class.
+错误模型在协程与异步两种用法下完全统一，使用同一个 **`Webman\Openai\OpenAIException`** 类。
 
 ---
 
-#### Coroutines · non-streaming
+
+#### 协程 · 非流式
 
 ```php
 <?php
@@ -801,7 +803,7 @@ class ChatController
 }
 ```
 
-#### Coroutines · streaming
+#### 协程 · 流式
 
 ```php
 <?php
@@ -859,7 +861,7 @@ class ChatController
 }
 ```
 
-#### Async callbacks · non-streaming
+#### 异步回调 · 非流式
 
 ```php
 <?php
