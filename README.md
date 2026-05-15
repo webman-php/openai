@@ -647,6 +647,162 @@ class AudioController
 
 ---
 
+## Audio: speech-to-text (STT / `transcriptions`) (Webman)
+
+
+### Coroutines · non-streaming
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+
+class AudioController
+{
+    public function transcribe(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $result = $audio->transcriptions([
+            'model' => 'gpt-4o-mini-transcribe',
+            'file' => '/path/to/audio.mp3',
+            // 'response_format' => 'json', // default JSON; use 'text' for plain-text responses, etc.
+        ]);
+
+        // Usually ['text' => '...', ...] for JSON; string when the response body is plain text
+        return json($result);
+    }
+}
+```
+
+### Coroutines · streaming (SSE events)
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+
+class AudioController
+{
+    public function transcribeStream(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $events = $audio->transcriptions([
+            'model' => 'gpt-4o-mini-transcribe',
+            'file' => [
+                'contents' => (string) file_get_contents('/path/to/audio.mp3'),
+                'filename' => 'clip.mp3',
+                'mime' => 'audio/mpeg',
+            ],
+            'stream' => true,
+        ]);
+
+        $lines = [];
+        foreach ($events as $ev) {
+            $lines[] = $ev;
+        }
+
+        return json(['events' => $lines]);
+    }
+}
+```
+
+### Async callbacks · non-streaming
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+use Webman\Openai\OpenAIException;
+use Workerman\Http\Response;
+
+class AudioController
+{
+    public function transcribeAsync(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $audio->transcriptions(
+            [
+                'model' => 'gpt-4o-mini-transcribe',
+                'file' => '/path/to/audio.mp3',
+            ],
+            [
+                'complete' => function (array|string|null $result, ?OpenAIException $e, ?Response $response) {
+                    // On success: $result is array|string; on failure: $e is non-null
+                },
+            ]
+        );
+
+        return json(['ok' => true, 'note' => 'Handle the result inside the complete callback']);
+    }
+}
+```
+
+### Async callbacks · streaming
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+use Webman\Openai\OpenAIException;
+use Workerman\Http\Response;
+
+class AudioController
+{
+    public function transcribeStreamAsync(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $audio->transcriptions(
+            [
+                'model' => 'gpt-4o-mini-transcribe',
+                'file' => '/path/to/audio.mp3',
+                'stream' => true,
+            ],
+            [
+                'stream' => function (array $event) {
+                    // e.g. transcript.text.delta / transcript.text.done
+                },
+                'complete' => function (array|string|null $result, ?OpenAIException $e, ?Response $response) {
+                    // If stream is set above, $result is often null on success.
+                    // If only complete + $data['stream'], $result is an aggregated array (includes text, etc.).
+                },
+            ]
+        );
+
+        return json(['ok' => true]);
+    }
+}
+```
+
+---
+
 ## Gateway compatibility: Azure OpenAI
 
 ### Coroutines · Chat streaming

@@ -10,7 +10,7 @@ use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Http\Response;
 
 /**
- * Minimal HTTP server mimicking OpenAI chat, audio, images, and embeddings endpoints.
+ * Minimal HTTP server mimicking OpenAI chat, audio (speech, transcriptions, translations), images, and embeddings endpoints.
  *
  * Scenario is selected with request header {@code X-Test-Scenario}.
  * Images: JSON body {@code model} starting with {@code gpt-image-} returns GPT Image–style {@code data[].b64_json};
@@ -30,6 +30,16 @@ final class MockOpenaiHttpWorker
         $path = $request->path();
         if ($path === '/v1/audio/speech') {
             self::handleAudioSpeech($connection, $request);
+
+            return;
+        }
+        if ($path === '/v1/audio/transcriptions') {
+            self::handleAudioTranscription($connection, $request, false);
+
+            return;
+        }
+        if ($path === '/v1/audio/translations') {
+            self::handleAudioTranscription($connection, $request, true);
 
             return;
         }
@@ -315,6 +325,87 @@ final class MockOpenaiHttpWorker
             'Content-Type' => 'audio/mpeg',
             'X-Mock-Request-Id' => 'req_mock_speech',
         ], 'MOCK_TTS_SINGLE'));
+    }
+
+    /**
+     * Mock OpenAI {@code /v1/audio/transcriptions} and {@code /v1/audio/translations}.
+     *
+     * Select behaviour with {@code X-Test-Scenario}:
+     * - {@code transcription-json} / {@code translation-json}: single JSON body {@code {"text":...}}.
+     * - {@code transcription-sse} / {@code translation-sse}: chunked {@code text/event-stream} (OpenAI-style deltas + done).
+     * - {@code transcription-401}: JSON error / HTTP 401.
+     */
+    private static function handleAudioTranscription(TcpConnection $connection, Request $request, bool $isTranslation): void
+    {
+        $scenario = (string) $request->header('x-test-scenario', $isTranslation ? 'translation-json' : 'transcription-json');
+
+        if ($scenario === 'transcription-401') {
+            $body = json_encode([
+                'error' => [
+                    'message' => 'mock transcription unauthorized',
+                    'type' => 'invalid_request_error',
+                    'param' => null,
+                    'code' => 'invalid_api_key',
+                ],
+            ], JSON_UNESCAPED_UNICODE);
+            $connection->send(new Response(401, [
+                'Content-Type' => 'application/json; charset=utf-8',
+            ], $body));
+
+            return;
+        }
+
+        $wantStream = str_contains($scenario, '-sse');
+        if ($wantStream) {
+            $zh = '你好';
+            $en = 'Hello';
+            $doneText = $isTranslation ? $en : $zh;
+            if ($isTranslation) {
+                $d1 = 'H';
+                $d2 = 'ello';
+            } else {
+                $d1 = '你';
+                $d2 = '好';
+            }
+
+            $connection->send(new Response(200, [
+                'Content-Type' => 'text/event-stream; charset=utf-8',
+                'Cache-Control' => 'no-cache',
+                'Connection' => 'keep-alive',
+                'Transfer-Encoding' => 'chunked',
+                'X-Mock-Request-Id' => $isTranslation ? 'req_mock_translation_sse' : 'req_mock_transcription_sse',
+            ]));
+
+            $lines = [
+                self::sseDataLine([
+                    'type' => 'transcript.text.delta',
+                    'delta' => $d1,
+                ]),
+                self::sseDataLine([
+                    'type' => 'transcript.text.delta',
+                    'delta' => $d2,
+                ]),
+                self::sseDataLine([
+                    'type' => 'transcript.text.done',
+                    'text' => $doneText,
+                    'usage' => ['type' => 'seconds', 'seconds' => 0.42],
+                ]),
+                "data: [DONE]\n\n",
+            ];
+            foreach ($lines as $line) {
+                $connection->send(new Chunk($line));
+            }
+            $connection->send(new Chunk(''));
+
+            return;
+        }
+
+        $text = $isTranslation ? 'Hello' : '你好';
+        $body = json_encode(['text' => $text], JSON_UNESCAPED_UNICODE);
+        $connection->send(new Response(200, [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'X-Mock-Request-Id' => $isTranslation ? 'req_mock_translation_json' : 'req_mock_transcription_json',
+        ], $body));
     }
 
     private static function handleImagesGenerations(TcpConnection $connection, Request $request): void

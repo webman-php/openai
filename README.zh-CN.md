@@ -649,6 +649,162 @@ class AudioController
 
 ---
 
+## Audio：语音转文字（STT / `transcriptions`）(Webman环境)
+
+
+### 协程 · 非流式
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+
+class AudioController
+{
+    public function transcribe(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $result = $audio->transcriptions([
+            'model' => 'gpt-4o-mini-transcribe',
+            'file' => '/path/to/audio.mp3',
+            // 'response_format' => 'json', // 默认 JSON；纯文本时可改为 'text' 等
+        ]);
+
+        // $result 一般为 ['text' => '...', ...]；纯文本响应时为 string
+        return json($result);
+    }
+}
+```
+
+### 协程 · 流式（SSE 事件）
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+
+class AudioController
+{
+    public function transcribeStream(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $events = $audio->transcriptions([
+            'model' => 'gpt-4o-mini-transcribe',
+            'file' => [
+                'contents' => (string) file_get_contents('/path/to/audio.mp3'),
+                'filename' => 'clip.mp3',
+                'mime' => 'audio/mpeg',
+            ],
+            'stream' => true,
+        ]);
+
+        $lines = [];
+        foreach ($events as $ev) {
+            $lines[] = $ev;
+        }
+
+        return json(['events' => $lines]);
+    }
+}
+```
+
+### 异步回调 · 非流式
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+use Webman\Openai\OpenAIException;
+use Workerman\Http\Response;
+
+class AudioController
+{
+    public function transcribeAsync(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $audio->transcriptions(
+            [
+                'model' => 'gpt-4o-mini-transcribe',
+                'file' => '/path/to/audio.mp3',
+            ],
+            [
+                'complete' => function (array|string|null $result, ?OpenAIException $e, ?Response $response) {
+                    // 成功：$result 为数组或字符串；失败：$e 非空
+                },
+            ]
+        );
+
+        return json(['ok' => true, 'note' => '结果在 complete 回调中处理']);
+    }
+}
+```
+
+### 异步回调 · 流式
+
+```php
+<?php
+
+namespace app\controller;
+
+use support\Request;
+use Webman\Openai\Audio;
+use Webman\Openai\OpenAIException;
+use Workerman\Http\Response;
+
+class AudioController
+{
+    public function transcribeStreamAsync(Request $request)
+    {
+        $audio = new Audio([
+            'apikey' => getenv('OPENAI_API_KEY') ?: 'sk-xxx',
+            'api' => 'https://api.openai.com',
+        ]);
+
+        $audio->transcriptions(
+            [
+                'model' => 'gpt-4o-mini-transcribe',
+                'file' => '/path/to/audio.mp3',
+                'stream' => true,
+            ],
+            [
+                'stream' => function (array $event) {
+                    // 例如 transcript.text.delta / transcript.text.done 等
+                },
+                'complete' => function (array|string|null $result, ?OpenAIException $e, ?Response $response) {
+                    // 若上面提供了 stream：成功完成时 $result 多为 null。
+                    // 若仅 complete + $data['stream']：$result 为聚合后的数组（含 text 等）。
+                },
+            ]
+        );
+
+        return json(['ok' => true]);
+    }
+}
+```
+
+---
+
 ## 兼容网关：Azure OpenAI
 
 ### 协程 · Chat 流式

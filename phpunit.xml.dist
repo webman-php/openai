@@ -10,6 +10,7 @@
         <testsuite name="OpenAI">
             <file>tests/ChatCompletionsTest.php</file>
             <file>tests/AudioSpeechTest.php</file>
+            <file>tests/AudioTranscriptionTest.php</file>
             <file>tests/ImageGenerationsTest.php</file>
             <file>tests/EmbeddingCreateTest.php</file>
         </testsuite>
